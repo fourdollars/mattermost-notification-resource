@@ -1,0 +1,48 @@
+#!/bin/bash
+
+set -euo pipefail
+
+exec 3>&1
+exec 1>&2
+jq -M -S . < /dev/stdin > /tmp/input.json
+
+if [ "$(jq -r '.source | has("webhook")' < /tmp/input.json)" = 'true' ]; then
+    webhook="$(jq -r .source.webhook < /tmp/input.json)"
+else
+    echo "You need to provide the webhook."
+    exit 1
+fi
+
+case "$0" in
+    (/opt/resource/check)
+        json='[{"webhook":"'"$webhook"'"}]'
+        ;;
+    (/opt/resource/out)
+        cd "$1"
+        message=
+        if [ "$(jq -r '.params | has("message")' < /tmp/input.json)" = 'true' ]; then
+            message="$(jq -r .params.message < /tmp/input.json)"
+        elif [ "$(jq -r '.params | has("path")' < /tmp/input.json)" = 'true' ]; then
+            path="$(jq -r .params.path < /tmp/input.json)"
+        else
+            echo "You need to provide the message or the path to read the message.log."
+            exit 1
+        fi
+        json='{"version":{"webhook":"'"$webhook"'"},"metadata":[{"name":"message","value":"'
+        if [ -n "$message" ]; then
+            message="${message//\\/\\\\}"
+            json+="${message//\"/\\\"}"
+        elif [ -n "$path" ]; then
+            message="$(cat "$path"/message.log)"
+            message="${message//\\/\\\\}"
+            json+="${message//\"/\\\"}"
+        fi
+        json+='"}]}'
+        curl -i -X POST --data-urlencode 'payload={"text": "'"$message"'"}' "$webhook"
+        ;;
+    (*)
+        json='{"version":{"webhook":"'"$webhook"'"}}'
+        ;;
+esac
+
+jq -n "$json" >&3
