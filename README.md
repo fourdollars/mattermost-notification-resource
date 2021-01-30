@@ -30,6 +30,7 @@ resource_types:
 ### Resource
 
 * webhook: **required**
+* link: optional, provide the link back to the Concourse CI.
 
 ```yaml
 resources:
@@ -39,12 +40,14 @@ resources:
   check_every: 87600h
   source:
     webhook: http://{your-mattermost-site}/hooks/xxx-generatedkey-xxx
+    link: true
 ```
 
 ### Example
 
 * message: **required** if path is not provided.
 * path: **required** if message is not provided.
+* link: optional, provide the link back to the Concourse CI.
 
 ```yaml
 jobs:
@@ -70,5 +73,6 @@ jobs:
       path: output
   - put: notification
     params:
+      link: false
       message: "Hi, here."
 ```

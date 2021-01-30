@@ -8,14 +8,21 @@ jq -M -S . < /dev/stdin > /tmp/input.json
 
 if [ "$(jq -r '.source | has("webhook")' < /tmp/input.json)" = 'true' ]; then
     webhook="$(jq -r .source.webhook < /tmp/input.json)"
+    sha1="$(echo "$webhook" | sha1sum | awk '{print $1}')"
 else
     echo "You need to provide the webhook."
     exit 1
 fi
 
+if [ "$(jq -r '.params | has("link")' < /tmp/input.json)" = 'true' ]; then
+    link="$(jq -r .params.link < /tmp/input.json)"
+else
+    link="$(jq -r .source.link < /tmp/input.json)"
+fi
+
 case "$0" in
     (/opt/resource/check)
-        json='[{"webhook":"'"$webhook"'"}]'
+        json='[{"webhook":"'"$(dirname "$webhook")"'","sha1":"'"$sha1"'"}]'
         ;;
     (/opt/resource/out)
         cd "$1"
@@ -28,7 +35,7 @@ case "$0" in
             echo "You need to provide the message or the path to read the message.log."
             exit 1
         fi
-        json='{"version":{"webhook":"'"$webhook"'"},"metadata":[{"name":"message","value":"'
+        json='{"version":{"webhook":"'"$(dirname "$webhook")"'","sha1":"'"$sha1"'"},"metadata":[{"name":"message","value":"'
         if [ -n "$message" ]; then
             message="${message//\\/\\\\}"
             json+="${message//\"/\\\"}"
@@ -38,10 +45,15 @@ case "$0" in
             json+="${message//\"/\\\"}"
         fi
         json+='"}]}'
-        curl -i -X POST --data-urlencode 'payload={"text": "'"$message"'"}' "$webhook"
+        if [ "$link" = 'true' ]; then
+            LINK="$ATC_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME"
+            curl -i -X POST --data-urlencode 'payload={"text": "'"$message [[log]]($LINK)"'"}' "$webhook"
+        else
+            curl -i -X POST --data-urlencode 'payload={"text": "'"$message"'"}' "$webhook"
+        fi
         ;;
     (*)
-        json='{"version":{"webhook":"'"$webhook"'"}}'
+        json='{"version":{"webhook":"'"$(dirname "$webhook")"'","sha1":"'"$sha1"'"}}'
         ;;
 esac
 
