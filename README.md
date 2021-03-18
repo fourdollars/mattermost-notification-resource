@@ -37,7 +37,7 @@ resources:
 - name: notification
   type: resource-mattermost-notification
   icon: bell
-  check_every: 87600h
+  check_every: never
   source:
     webhook: http://{your-mattermost-site}/hooks/xxx-generatedkey-xxx
     link: true
@@ -69,9 +69,11 @@ jobs:
         - |
           echo "Hello World" > output/message.log
   - put: notification
+    inputs: [output]
     params:
       path: output
   - put: notification
+    inputs: detect
     params:
       link: false
       message: "Hi, here."
