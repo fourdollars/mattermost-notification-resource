@@ -20,6 +20,12 @@ else
     link="$(jq -r .source.link < /tmp/input.json)"
 fi
 
+if [ "$(jq -r '.params | has("badge")' < /tmp/input.json)" = 'true' ]; then
+    badge="$(jq -r .params.badge < /tmp/input.json)"
+else
+    badge="$(jq -r .source.badge < /tmp/input.json)"
+fi
+
 case "$0" in
     (/opt/resource/check)
         json='[{"webhook":"'"$(dirname "$webhook")"'","sha1":"'"$sha1"'"}]'
@@ -38,19 +44,26 @@ case "$0" in
         json='{"version":{"webhook":"'"$(dirname "$webhook")"'","sha1":"'"$sha1"'"},"metadata":[{"name":"message","value":"'
         if [ -n "$message" ]; then
             message="${message//\\/\\\\}"
-            json+="${message//\"/\\\"}"
+            message="${message//\"/\\\"}"
+            json+="${message}"
         elif [ -n "$path" ]; then
             message="$(cat "$path"/message.log)"
             message="${message//\\/\\\\}"
-            json+="${message//\"/\\\"}"
+            message="${message//\"/\\\"}"
+            json+="${message}"
         fi
         json+='"}]}'
-        if [ "$link" = 'true' ]; then
-            LINK="$ATC_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME"
-            curl -i -X POST --data-urlencode 'payload={"text": "'"$message [[log]]($LINK)"'"}' "$webhook"
+        if [ "$badge" = 'true' ]; then
+            BADGE=" ![badge]($ATC_EXTERNAL_URL/api/v1/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/badge)"
         else
-            curl -i -X POST --data-urlencode 'payload={"text": "'"$message"'"}' "$webhook"
+            BADGE=''
         fi
+        if [ "$link" = 'true' ]; then
+            LINK=" [[log]]($ATC_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME)"
+        else
+            LINK=''
+        fi
+        curl -i -X POST --data-urlencode 'payload={"text": "'"$message$LINK$BADGE"'"}' "$webhook"
         ;;
     (*)
         json='{"version":{"webhook":"'"$(dirname "$webhook")"'","sha1":"'"$sha1"'"}}'

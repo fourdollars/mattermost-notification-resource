@@ -30,6 +30,7 @@ resource_types:
 ### Resource
 
 * webhook: **required**
+* badge: optional, provide the badge for the job of the Concourse CI.
 * link: optional, provide the link back to the Concourse CI.
 
 ```yaml
@@ -40,6 +41,7 @@ resources:
   check_every: never
   source:
     webhook: http://{your-mattermost-site}/hooks/xxx-generatedkey-xxx
+    badge: true
     link: true
 ```
 
@@ -47,6 +49,7 @@ resources:
 
 * message: **required** if path is not provided.
 * path: **required** if message is not provided.
+* badge: optional, provide the badge for the job of the Concourse CI.
 * link: optional, provide the link back to the Concourse CI.
 
 ```yaml
@@ -75,6 +78,7 @@ jobs:
   - put: notification
     inputs: detect
     params:
+      badge: false
       link: false
       message: "Hi, here."
 ```
