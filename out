@@ -63,7 +63,9 @@ case "$0" in
         else
             LINK=''
         fi
-        curl -i -X POST --data-urlencode 'payload={"text": "'"$message$LINK$BADGE"'"}' "$webhook"
+        if [ -n "$message" ]; then
+            curl -i -X POST --data-urlencode 'payload={"text": "'"$message$LINK$BADGE"'"}' "$webhook"
+        fi
         ;;
     (*)
         json='{"version":{"webhook":"'"$(dirname "$webhook")"'","sha1":"'"$sha1"'"}}'
