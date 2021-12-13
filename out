@@ -4,26 +4,26 @@ set -euo pipefail
 
 exec 3>&1
 exec 1>&2
-jq -M -S . < /dev/stdin > /tmp/input.json
+payload="$(cat <&0)"
 
-if [ "$(jq -r '.source | has("webhook")' < /tmp/input.json)" = 'true' ]; then
-    webhook="$(jq -r .source.webhook < /tmp/input.json)"
+if [ "$(jq -r '.source | has("webhook")' <<< "$payload")" = 'true' ]; then
+    webhook="$(jq -r .source.webhook <<< "$payload")"
     sha1="$(echo "$webhook" | sha1sum | awk '{print $1}')"
 else
     echo "You need to provide the webhook."
     exit 1
 fi
 
-if [ "$(jq -r '.params | has("link")' < /tmp/input.json)" = 'true' ]; then
-    link="$(jq -r .params.link < /tmp/input.json)"
+if [ "$(jq -r '.params | has("link")' <<< "$payload")" = 'true' ]; then
+    link="$(jq -r .params.link <<< "$payload")"
 else
-    link="$(jq -r .source.link < /tmp/input.json)"
+    link="$(jq -r .source.link <<< "$payload")"
 fi
 
-if [ "$(jq -r '.params | has("badge")' < /tmp/input.json)" = 'true' ]; then
-    badge="$(jq -r .params.badge < /tmp/input.json)"
+if [ "$(jq -r '.params | has("badge")' <<< "$payload")" = 'true' ]; then
+    badge="$(jq -r .params.badge <<< "$payload")"
 else
-    badge="$(jq -r .source.badge < /tmp/input.json)"
+    badge="$(jq -r .source.badge <<< "$payload")"
 fi
 
 case "$0" in
@@ -33,10 +33,10 @@ case "$0" in
     (/opt/resource/out)
         cd "$1"
         message=
-        if [ "$(jq -r '.params | has("message")' < /tmp/input.json)" = 'true' ]; then
-            message="$(jq -r .params.message < /tmp/input.json)"
-        elif [ "$(jq -r '.params | has("path")' < /tmp/input.json)" = 'true' ]; then
-            path="$(jq -r .params.path < /tmp/input.json)"
+        if [ "$(jq -r '.params | has("message")' <<< "$payload")" = 'true' ]; then
+            message="$(jq -r .params.message <<< "$payload")"
+        elif [ "$(jq -r '.params | has("path")' <<< "$payload")" = 'true' ]; then
+            path="$(jq -r .params.path <<< "$payload")"
         else
             echo "You need to provide the message or the path to read the message.log."
             exit 1
