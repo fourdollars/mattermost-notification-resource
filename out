@@ -47,7 +47,12 @@ case "$0" in
             message="${message//\"/\\\"}"
             json+="${message}"
         elif [ -n "$path" ]; then
-            message="$(cat "$path"/message.log)"
+            if [ "$badge" = 'true' ] || [ "$link" = 'true' ]; then
+                message="$(cat "$path"/message.log)
+"
+            else
+                message="$(cat "$path"/message.log)"
+            fi
             message="${message//\\/\\\\}"
             message="${message//\"/\\\"}"
             json+="${message}"
